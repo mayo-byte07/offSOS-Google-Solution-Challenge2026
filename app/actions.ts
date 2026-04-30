@@ -70,7 +70,7 @@ export async function submitReport(formData: FormData) {
 export async function resolveReport(id: number) {
   const { error } = await supabase
     .from('reports')
-    .update({ status: 'RESOLVED' })
+    .delete()
     .eq('id', id)
 
   if (error) {

@@ -36,3 +36,8 @@ CREATE POLICY "Public insert access" ON reports
 CREATE POLICY "Public update access for status" ON reports
   FOR UPDATE TO anon, authenticated
   USING (true) WITH CHECK (status = 'RESOLVED' OR status = 'HELP' OR status = 'SAFE');
+
+-- Create policy for public delete access
+CREATE POLICY "Public delete access" ON reports
+  FOR DELETE TO anon, authenticated
+  USING (true);
