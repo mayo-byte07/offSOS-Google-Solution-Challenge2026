@@ -172,14 +172,49 @@ export default function Home() {
                     const deviceInfo = navigator.platform + ' ' + (navigator.userAgent.match(/Android|iPhone|iPad/) ? navigator.userAgent.match(/Android|iPhone|iPad/)![0] : 'Web');
                     
                     window.location.href = `sms:112?body=${encodeURIComponent(`🚨 SOS PANIC!\nLoc: ${location}\nDevice: ${deviceInfo}`)}`;
+                    
+                    // Submit form normally (using action prop)
                     setTimeout(() => form.submit(), 800);
+                    
+                    // Refresh reports after submission
+                    setTimeout(async () => {
+                      const response = await fetch('/api/reports');
+                      const rawReports = await response.json();
+                      const reportsArray = Array.isArray(rawReports) ? rawReports : [];
+                      const priorityWeight: Record<string, number> = { 'CRITICAL': 3, 'URGENT': 2, 'MODERATE': 1 };
+                      const sortedReports = reportsArray.sort((a: any, b: any) => {
+                        const pA = priorityWeight[a.priority] || 0;
+                        const pB = priorityWeight[b.priority] || 0;
+                        if (pB !== pA) return pB - pA;
+                        return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+                      });
+                      setReports(sortedReports);
+                    }, 1000);
+                    
                   } catch (error) {
                     console.error('Panic location failed:', error);
                     panicLocInput.value = 'Unknown Location';
                     const deviceInfo = navigator.platform + ' ' + (navigator.userAgent.match(/Android|iPhone/)? navigator.userAgent.match(/Android|iPhone|iPad/)![0] : 'Web');
                     
                     window.location.href = `sms:112?body=${encodeURIComponent(`🚨 SOS PANIC!\nLoc: Unknown Location\nDevice: ${deviceInfo}`)}`;
+                    
+                    // Submit form normally (using action prop)
                     setTimeout(() => form.submit(), 800);
+                    
+                    // Refresh reports after submission
+                    setTimeout(async () => {
+                      const response = await fetch('/api/reports');
+                      const rawReports = await response.json();
+                      const reportsArray = Array.isArray(rawReports) ? rawReports : [];
+                      const priorityWeight: Record<string, number> = { 'CRITICAL': 3, 'URGENT': 2, 'MODERATE': 1 };
+                      const sortedReports = reportsArray.sort((a: any, b: any) => {
+                        const pA = priorityWeight[a.priority] || 0;
+                        const pB = priorityWeight[b.priority] || 0;
+                        if (pB !== pA) return pB - pA;
+                        return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+                      });
+                      setReports(sortedReports);
+                    }, 1000);
                   } finally {
                     setLocationLoading(false);
                   }
@@ -201,11 +236,46 @@ export default function Home() {
                     const location = locationData.address || `${locationData.latitude.toFixed(8)}, ${locationData.longitude.toFixed(8)}`;
                     
                     panicLocInput.value = location;
+                    
+                    // Submit form normally (using action prop)
                     form.submit();
+                    
+                    // Refresh reports after submission
+                    setTimeout(async () => {
+                      const response = await fetch('/api/reports');
+                      const rawReports = await response.json();
+                      const reportsArray = Array.isArray(rawReports) ? rawReports : [];
+                      const priorityWeight: Record<string, number> = { 'CRITICAL': 3, 'URGENT': 2, 'MODERATE': 1 };
+                      const sortedReports = reportsArray.sort((a: any, b: any) => {
+                        const pA = priorityWeight[a.priority] || 0;
+                        const pB = priorityWeight[b.priority] || 0;
+                        if (pB !== pA) return pB - pA;
+                        return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+                      });
+                      setReports(sortedReports);
+                    }, 1000);
+                    
                   } catch (error) {
                     console.error('Silent panic location failed:', error);
                     panicLocInput.value = 'Unknown Location';
+                    
+                    // Submit form normally (using action prop)
                     form.submit();
+                    
+                    // Refresh reports after submission
+                    setTimeout(async () => {
+                      const response = await fetch('/api/reports');
+                      const rawReports = await response.json();
+                      const reportsArray = Array.isArray(rawReports) ? rawReports : [];
+                      const priorityWeight: Record<string, number> = { 'CRITICAL': 3, 'URGENT': 2, 'MODERATE': 1 };
+                      const sortedReports = reportsArray.sort((a: any, b: any) => {
+                        const pA = priorityWeight[a.priority] || 0;
+                        const pB = priorityWeight[b.priority] || 0;
+                        if (pB !== pA) return pB - pA;
+                        return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+                      });
+                      setReports(sortedReports);
+                    }, 1000);
                   }
                 }}
               >
@@ -224,7 +294,35 @@ export default function Home() {
           <div className="h-px bg-white/10 flex-1" />
         </h2>
         
-        <form action={submitReport} className="flex flex-col gap-6">
+        <form 
+          action={async (formData: FormData) => {
+            try {
+              await submitReport(formData);
+              // Immediately refresh reports after submission
+              const response = await fetch('/api/reports');
+              const rawReports = await response.json();
+              const reportsArray = Array.isArray(rawReports) ? rawReports : [];
+              
+              // Priority sorting (CRITICAL > URGENT > MODERATE)
+              const priorityWeight: Record<string, number> = { 'CRITICAL': 3, 'URGENT': 2, 'MODERATE': 1 };
+              const sortedReports = reportsArray.sort((a: any, b: any) => {
+                const pA = priorityWeight[a.priority] || 0;
+                const pB = priorityWeight[b.priority] || 0;
+                if (pB !== pA) return pB - pA;
+                return new Date(b.created_at || b.createdAt).getTime() - new Date(a.created_at || a.createdAt).getTime();
+              });
+              
+              setReports(sortedReports);
+              
+              // Show success message
+              alert('SOS Report broadcasted successfully!');
+            } catch (error) {
+              console.error('Failed to submit report:', error);
+              alert('Failed to submit report. Please try again.');
+            }
+          }}
+          className="flex flex-col gap-6"
+        >
           <input type="hidden" name="status" value="HELP" />
 
           <div>
